@@ -8,7 +8,7 @@ cat <<-EOF
 
 	This script runs scripts on remote logstash machines.
 
-	Commands supported: run, stop, clear-cache, clear-logs, tail-err, tail-out 
+	Commands supported: status, run, stop, clear-cache, clear-logs, tail-err, tail-out 
 
 	Options:
 		-h	Show this message
@@ -21,7 +21,7 @@ EOF
 }
 
 PWD=`pwd`
-ALLCOMMANDS=('run' 'stop' 'clear-cache' 'clear-logs' 'tail-err' 'tail-out' 'update-git')
+ALLCOMMANDS=('status' 'run' 'stop' 'clear-cache' 'clear-logs' 'tail-err' 'tail-out' 'update-git')
 REMOTEPATH="/root/atlantis-analytics"
 ROUTERPATH="${REMOTEPATH}/logstash-atlantis-router"
 MANAGERPATH="${REMOTEPATH}/logstash-atlantis-manager"
