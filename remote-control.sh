@@ -8,7 +8,7 @@ cat <<-EOF
 
 	This script runs scripts on remote logstash machines.
 
-	Commands supported: status, run, stop, clear-cache, clear-logs, tail-err, tail-out 
+	Commands supported: status, run, stop, update-git, clear-cache, clear-logs, tail-err, tail-out 
 
 	Options:
 		-h	Show this message
@@ -17,6 +17,7 @@ cat <<-EOF
 		-z	Which region/zone you want to execute in (useast1a, useast1d, useast1e), none executes all.
 		-i	Internal flag, without this flag it is assumed to run in both internal and external.
 		-e	External flag, without this flag it is assumed to run in both internal and external.
+		-x	Custom command, pass desired command as arg to -d
 EOF
 }
 
@@ -34,6 +35,8 @@ SUPERVISOR=""
 INTERNAL=""
 EXTERNAL=""
 REGION=""
+ISCUSTOM=""
+CUSTOMCMD=""
 HOSTS=()
 PATHS=()
 
@@ -100,27 +103,33 @@ gethosts() {
 }
 
 runcmd() {
-	if [ $COMMAND = "update-git" ]; then
+	if [ "${COMMAND}" = "update-git" ]; then
 
 		for i in "${!HOSTS[@]}"; do
 			echo "Updating git repo on ${HOSTS[${i}]}..."
-			CMDSTR="cd ${PATHS[${i}]}/;git pull;"
+			CMDSTR="cd ${PATHS[${i}]}/;git pull;git submodule update --init"
 			ssh root@${HOSTS[${i}]} $CMDSTR 
 		done
 
-	else 
+	elif [ "${ISCUSTOM}" = "true" ]; then
+		for i in "${!HOSTS[@]}"; do
+			echo "Running custom command on ${HOSTS[${i}]}..."
+			CMDSTR="$CUSTOMCMD"
+			ssh root@${HOSTS[${i}]} $CMDSTR
+		done
+	else	
 
 		for i in "${!HOSTS[@]}"; do
 			echo "Running command: ${COMMAND} on ${HOSTS[${i}]}..."
-			CMDSTR="sh ${PATHS[${i}]}/scripts/remote-control/${COMMAND}.sh"
-			ssh root@${HOSTS[${i}]} $CMDSTR 
+			CMDSTR="sh ${PATHS[${i}]}/scripts/logstash-atlantis-remote-scripts/${COMMAND}.sh"
+			ssh root@${HOSTS[${i}]} $CMDSTR
 		done
 
 	fi
 }
 
 
-while getopts "hmsraiec:z:" OPTION; do
+while getopts "hmsraiec:z:x:" OPTION; do
 
 	case $OPTION in
 	h)
@@ -152,6 +161,10 @@ while getopts "hmsraiec:z:" OPTION; do
 		;;
 	e)
 		EXTERNAL="true"
+		;;
+	x)
+		ISCUSTOM="true"
+		CUSTOMCMD=$OPTARG
 		;;
 	\?)
 		echo "Invalid option: -$OPTION"
